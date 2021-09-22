@@ -2,7 +2,7 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
 #include <iostream>
-
+#include <stdio.h>
 
 using namespace cv;
 using namespace std;
@@ -27,17 +27,19 @@ Mat clearImg(Mat &img) {
     Mat blacked_canny, preprocessed, bilateral;
     GaussianBlur(img, blacked_canny, Size(7, 7), 0, 0);
     bilateralFilter(blacked_canny, bilateral, 9, 80, 80);
-    Canny(bilateral, preprocessed, 25, 75, 3);
+    Canny(bilateral, preprocessed, 20, 40, 3);
     return preprocessed;
 }
 
 void processImage(vector<Mat> &processedImages, Mat tempImg) {
     Mat preprocessed = clearImg(tempImg);
     vector<Vec3f> storage;
+    /*
     HoughCircles(preprocessed, storage, HOUGH_GRADIENT, 2,
                  preprocessed.rows / 16, 100, 80, 15, 40);
     drawCircles(storage, tempImg);
-    processedImages.push_back(tempImg);
+     */
+    processedImages.push_back(preprocessed);
 }
 
 //Opens a folder with images and stores them on the images vector
@@ -63,11 +65,29 @@ void showImages(vector<Mat> &images) {
     }
 }
 
+void openCamara() {
+    VideoCapture cap(2);
+    if (!cap.isOpened()) {
+        cout << "Camara not found";
+        return;
+    }
+    for (;;) {
+        Mat frame, resized;
+        cap >> frame;
+        if (waitKey(50) >= 0) break;
+        resize(frame, resized, Size(400, 394));
+        imshow("Test", resized);
+        cout << "Mat of rows: " << frame.rows << "Mat of columns" << frame.cols << endl;
+    }
+
+}
+
 int main() {
     vector<Mat> images;
     vector<Mat> resultImages;
     openTestImages(images, resultImages, "IrisDB");
     showImages(resultImages);
+    //openCamara();
     return EXIT_SUCCESS;
 }
 
