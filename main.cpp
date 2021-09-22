@@ -2,7 +2,6 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
 #include <iostream>
-#include <stdio.h>
 
 using namespace cv;
 using namespace std;
@@ -24,7 +23,7 @@ void drawCircles(vector<Vec3f> &results, Mat &toMat) {
 }
 
 Mat clearImg(Mat &img) {
-    Mat blacked_canny, preprocessed, bilateral;
+    Mat blacked_canny, bilateral;
     GaussianBlur(img, blacked_canny, Size(7, 7), 0, 0);
     bilateralFilter(blacked_canny, bilateral, 9, 80, 80);
     /*
@@ -35,36 +34,35 @@ Mat clearImg(Mat &img) {
     drawContours(preprocessed, contours, -1, (255, 0, 255), 0.1);
      */
 
-    return preprocessed;
+    return bilateral;
 }
 
 void detectPupil(Mat &preprocessed, Mat &initialIMG) {
-    vector<Vec3f> storage;
     Mat canny;
     Canny(preprocessed, canny, 20, 40, 3);
     //TODO: IN CALIBRATION  STORE THE  VALUES FOR THE PUPIL OF THAT SESION
+    vector<Vec3f> storage;
     HoughCircles(canny, storage, HOUGH_GRADIENT, 2,
                  canny.rows / 16, 100, 80, 15, 40);
     drawCircles(storage, initialIMG);
 }
 
 void detectIRLEDS(Mat &preprocessed, Mat &initialIMG) {
+    Mat canny;
+    Canny(preprocessed, canny, 150, 250, 3);
+
     vector<Vec3f> storage;
-    Canny(bilateral, preprocessed, 20, 40, 3);
-    Canny(preprocessed, preprocessed, 100, 200, 3);
-    //TODO: IN CALIBRATION  STORE THE  VALUES FOR THE PUPIL OF THAT SESION
-    /*
-    HoughCircles(preprocessed, storage, HOUGH_GRADIENT, 2,
-                 preprocessed.rows / 16, 100, 80, 15, 40);
+    HoughCircles(canny, storage, HOUGH_GRADIENT, 2,
+                 5, 500, 15, 1, 5);
     drawCircles(storage, initialIMG);
-     */
 }
 
-void processImage(vector<Mat> &processedImages, Mat tempImg) {
+void processImage(Mat tempImg) {
     Mat preprocessed = clearImg(tempImg);
-    //detectPupil(preprocessed, tempImg);
+    detectPupil(preprocessed, tempImg);
     detectIRLEDS(preprocessed, tempImg);
-    processedImages.push_back(preprocessed);
+    imshow("test", tempImg);
+    if (waitKey(200) >= 0);
 }
 
 //Opens a folder with images and stores them on the images vector
@@ -75,18 +73,7 @@ void openTestImages(vector<Mat> &images, vector<Mat> &processedImages, const str
     //Iterating over the filenames
     for (const cv::String &filename: fn) {
         const Mat tempImg = imread(filename); //Creating the image from the filename
-        images.push_back(tempImg);
-        processImage(processedImages, tempImg); //Processing the images
-    }
-}
-
-void showImages(vector<Mat> &images) {
-    //Iterating over the test images
-    const int delay = 150;
-    for (Mat &img: images) {
-        imshow("Sample", img);
-        if (waitKey(delay) >= 0)
-            break;
+        processImage(tempImg); //Processing the images
     }
 }
 
@@ -111,7 +98,6 @@ int main() {
     vector<Mat> images;
     vector<Mat> resultImages;
     openTestImages(images, resultImages, "IrisDB");
-    showImages(resultImages);
     //openCamara();
     return EXIT_SUCCESS;
 }
