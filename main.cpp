@@ -27,18 +27,43 @@ Mat clearImg(Mat &img) {
     Mat blacked_canny, preprocessed, bilateral;
     GaussianBlur(img, blacked_canny, Size(7, 7), 0, 0);
     bilateralFilter(blacked_canny, bilateral, 9, 80, 80);
-    Canny(bilateral, preprocessed, 20, 40, 3);
+    /*
+     * SOME TEST WITH FINDCOUNTOURS IN ORDER TO CLEAR BETTER BUT WITH NO DRAMATICALLY IMPROVEMENT
+    vector<vector<Point> > contours;
+    vector<Vec4i> hierarchy;
+    findContours(preprocessed, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE);
+    drawContours(preprocessed, contours, -1, (255, 0, 255), 0.1);
+     */
+
     return preprocessed;
+}
+
+void detectPupil(Mat &preprocessed, Mat &initialIMG) {
+    vector<Vec3f> storage;
+    Mat canny;
+    Canny(preprocessed, canny, 20, 40, 3);
+    //TODO: IN CALIBRATION  STORE THE  VALUES FOR THE PUPIL OF THAT SESION
+    HoughCircles(canny, storage, HOUGH_GRADIENT, 2,
+                 canny.rows / 16, 100, 80, 15, 40);
+    drawCircles(storage, initialIMG);
+}
+
+void detectIRLEDS(Mat &preprocessed, Mat &initialIMG) {
+    vector<Vec3f> storage;
+    Canny(bilateral, preprocessed, 20, 40, 3);
+    Canny(preprocessed, preprocessed, 100, 200, 3);
+    //TODO: IN CALIBRATION  STORE THE  VALUES FOR THE PUPIL OF THAT SESION
+    /*
+    HoughCircles(preprocessed, storage, HOUGH_GRADIENT, 2,
+                 preprocessed.rows / 16, 100, 80, 15, 40);
+    drawCircles(storage, initialIMG);
+     */
 }
 
 void processImage(vector<Mat> &processedImages, Mat tempImg) {
     Mat preprocessed = clearImg(tempImg);
-    vector<Vec3f> storage;
-    /*
-    HoughCircles(preprocessed, storage, HOUGH_GRADIENT, 2,
-                 preprocessed.rows / 16, 100, 80, 15, 40);
-    drawCircles(storage, tempImg);
-     */
+    //detectPupil(preprocessed, tempImg);
+    detectIRLEDS(preprocessed, tempImg);
     processedImages.push_back(preprocessed);
 }
 
